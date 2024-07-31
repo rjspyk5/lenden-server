@@ -44,17 +44,16 @@ async function run() {
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
 
+    // collection names
     const userCollection = client.db("lenden").collection("userCollection");
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
 
+    //  login logout related api
     app.post("/reg", hashedPass, async (req, res) => {
       const data = req.body;
       const query = {
         $or: [{ email: req.body.email }, { number: req.body.number }],
       };
-      // chekced registered already or not
+      // checking already registered or not
       const isAlreadyHaveAccount = await userCollection.findOne(query);
       if (isAlreadyHaveAccount) {
         return res.send({
@@ -64,6 +63,31 @@ async function run() {
       const result = await userCollection.insertOne(data);
       res.send(result);
     });
+    app.post("/login", async (req, res) => {
+      const query = {
+        $or: [{ email: req.body.email }, { number: req.body.number }],
+      };
+      // chekcing email or number validity
+      const isAnyAccountHave = await userCollection.findOne(query);
+      if (!isAnyAccountHave) {
+        return res.send({ result: "Haven't any account by this info" });
+      }
+
+      if (isAnyAccountHave) {
+        const hashedPassword = isAnyAccountHave.password;
+        // checking password
+        bcrypt.compare(req.data.password, hashedPassword, (err, res) => {
+          if (err) {
+            return res.send({ result: "Sorry wrong password" });
+          } else {
+            console.log("sucssfully mathced password");
+          }
+        });
+      }
+    });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
   }
 }
