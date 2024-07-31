@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
@@ -19,6 +20,14 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("server is ready");
 });
+
+// middleware
+const hashedPass = async (req, res, next) => {
+  const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  req.body.password = hashedPassword;
+  next();
+};
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -40,13 +49,20 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
 
-    app.post("/reg", async (req, res) => {
+    app.post("/reg", hashedPass, async (req, res) => {
       const data = req.body;
       const query = {
         $or: [{ email: req.body.email }, { number: req.body.number }],
       };
       // chekced registered already or not
-      const isAlreadyHaveAccount = userCollection.findOne(query);
+      const isAlreadyHaveAccount = await userCollection.findOne(query);
+      if (isAlreadyHaveAccount) {
+        return res.send({
+          insertedId: null,
+        });
+      }
+      const result = await userCollection.insertOne(data);
+      res.send(result);
     });
   } finally {
   }
