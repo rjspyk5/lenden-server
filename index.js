@@ -65,8 +65,12 @@ async function run() {
     });
     app.post("/login", async (req, res) => {
       const query = {
-        $or: [{ email: req.body.email }, { number: req.body.number }],
+        $or: [
+          { email: req.body.emailOrNumber },
+          { number: req.body.emailOrNumber },
+        ],
       };
+
       // chekcing email or number validity
       const isAnyAccountHave = await userCollection.findOne(query);
       if (!isAnyAccountHave) {
@@ -76,11 +80,14 @@ async function run() {
       if (isAnyAccountHave) {
         const hashedPassword = isAnyAccountHave.password;
         // checking password
-        bcrypt.compare(req.data.password, hashedPassword, (err, res) => {
+        bcrypt.compare(req.body.password, hashedPassword, (err, ress) => {
           if (err) {
-            return res.send({ result: "Sorry wrong password" });
+            return res.send({ result: "Something Went Wrong" });
+          }
+          if (ress) {
+            return res.send({ result: true });
           } else {
-            console.log("sucssfully mathced password");
+            res.send({ result: false });
           }
         });
       }
