@@ -111,7 +111,6 @@ async function run() {
             return res.send({ result: "Something Went Wrong" });
           }
           if (ress) {
-            console.log(isAnyAccountHave);
             return res.send({
               result: true,
               data: {
