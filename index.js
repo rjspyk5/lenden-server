@@ -118,6 +118,7 @@ async function run() {
                 email: isAnyAccountHave?.email,
                 photo: isAnyAccountHave.photo,
                 accountStats: isAnyAccountHave.status,
+                role: isAnyAccountHave?.role,
               },
             });
           } else {
@@ -125,6 +126,19 @@ async function run() {
           }
         });
       }
+    });
+    app.get("/checkrole", async (req, res) => {
+      const emailOrNumber = req.query?.emailOrNumber;
+
+      const query = {
+        $or: [{ email: emailOrNumber }, { number: emailOrNumber }],
+      };
+      const options = {
+        projection: { role: 1 },
+      };
+      const result = await userCollection.findOne(query, options);
+
+      res.send(result);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
