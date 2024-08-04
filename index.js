@@ -129,15 +129,13 @@ async function run() {
     });
     app.get("/checkrole", async (req, res) => {
       const emailOrNumber = req.query?.emailOrNumber;
-
       const query = {
         $or: [{ email: emailOrNumber }, { number: emailOrNumber }],
       };
       const options = {
-        projection: { role: 1 },
+        projection: { role: 1, name: 1 },
       };
       const result = await userCollection.findOne(query, options);
-
       res.send(result);
     });
     console.log(
