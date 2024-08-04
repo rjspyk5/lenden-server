@@ -4,7 +4,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
@@ -133,10 +133,27 @@ async function run() {
         $or: [{ email: emailOrNumber }, { number: emailOrNumber }],
       };
       const options = {
-        projection: { role: 1, name: 1 },
+        projection: { role: 1, name: 1, number: 1 },
       };
       const result = await userCollection.findOne(query, options);
       res.send(result);
+    });
+
+    app.post("/sendmoney", async (req, res) => {
+      const password = req.body.pin;
+      const number = req.body.number;
+      console.log(number, password);
+      const result = await userCollection.findOne({ number: number });
+      const hashedPass = result.password;
+      bcrypt.compare(password, hashedPass, (er, ress) => {
+        if (!ress) {
+          return res.send({ result: "password didn't match" });
+        }
+        const transictionHistory = {
+          senderNumber: req.body.senderNumber,
+          amount: req.body.amount,
+        };
+      });
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
