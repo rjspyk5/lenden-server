@@ -141,16 +141,32 @@ async function run() {
 
     app.post("/sendmoney", async (req, res) => {
       const password = req.body.pin;
-      const number = req.body.number;
-      console.log(number, password);
-      const result = await userCollection.findOne({ number: number });
+      const ReciverNumber = req.body.number;
+      const senderNumber = req.body.senderNumber;
+      // find own account database
+      const result = await userCollection.findOne({
+        number: senderNumber,
+      });
+      // password verification
       const hashedPass = result.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
         if (!ress) {
           return res.send({ result: "password didn't match" });
         }
-        const transictionHistory = {
-          senderNumber: req.body.senderNumber,
+        const allTransictiorHistory = {
+          senderNumber,
+          ReciverNumber,
+          amount: req.body.amount,
+          method: req.body.method,
+        };
+        const ReciverTransictionHistory = {
+          senderNumber,
+          amount: req.body.amount,
+          method: "received_money",
+        };
+        const SenderTransictionHistory = {
+          ReciverNumber,
+          method: "send_money",
           amount: req.body.amount,
         };
       });
