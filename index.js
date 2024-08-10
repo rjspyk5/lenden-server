@@ -144,32 +144,72 @@ async function run() {
       const ReciverNumber = req.body.number;
       const senderNumber = req.body.senderNumber;
       // find own account database
-      const result = await userCollection.findOne({
+      const senderDetailsFromDatabase = await userCollection.findOne({
         number: senderNumber,
       });
+      // find receiverAccountDetails from database
+      const receiverAccountDetailsFromDatabase = await userCollection.findOne({
+        number: ReciverNumber,
+      });
       // password verification
-      const hashedPass = result.password;
+      const hashedPass = senderDetailsFromDatabase.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
         if (!ress) {
           return res.send({ result: "password didn't match" });
         }
-        const allTransictiorHistory = {
-          senderNumber,
-          ReciverNumber,
-          amount: req.body.amount,
-          method: req.body.method,
-        };
-        const ReciverTransictionHistory = {
-          senderNumber,
-          amount: req.body.amount,
-          method: "received_money",
-        };
-        const SenderTransictionHistory = {
-          ReciverNumber,
-          method: "send_money",
-          amount: req.body.amount,
-        };
+        if (senderDetailsFromDatabase?.amount < req.body.amount) {
+          console.log(senderDetailsFromDatabase.amount, "database amount");
+          console.log(req.body.amount, "sending amount");
+          return res.send({ result: "Insufficent Amount" });
+        }
       });
+
+      const allTransictiorHistory = {
+        senderNumber,
+        ReciverNumber,
+        amount: req.body.amount,
+        method: req.body.method,
+      };
+      const ReciverTransictionHistory = {
+        senderNumber,
+        amount: req.body.amount,
+        method: "received_money",
+      };
+      const SenderTransictionHistory = {
+        ReciverNumber,
+        method: "send_money",
+        amount: req.body.amount,
+      };
+
+      const updateDocForSender = {
+        $set: {
+          amount:
+            parseInt(senderDetailsFromDatabase.amount) -
+            parseInt(req.body.amount),
+        },
+        $push: { transictionHistory: SenderTransictionHistory },
+      };
+
+      const updateDocForReceiver = {
+        $set: {
+          amount:
+            parseInt(receiverAccountDetailsFromDatabase.amount) +
+            parseInt(req.body.amount),
+        },
+        $push: { transictionHistory: ReciverTransictionHistory },
+      };
+
+      const result = await userCollection.updateOne(
+        {
+          number: senderNumber,
+        },
+        updateDocForSender
+      );
+      const result2 = await userCollection.updateOne(
+        { number: ReciverNumber },
+        updateDocForReceiver
+      );
+      console.log(result, result2);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
