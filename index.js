@@ -157,9 +157,7 @@ async function run() {
         if (!ress) {
           return res.send({ result: "password didn't match" });
         }
-        if (senderDetailsFromDatabase?.amount < req.body.amount) {
-          console.log(senderDetailsFromDatabase.amount, "database amount");
-          console.log(req.body.amount, "sending amount");
+        if (senderDetailsFromDatabase?.amount < req.body.amount + 5) {
           return res.send({ result: "Insufficent Amount" });
         }
       });
@@ -185,7 +183,7 @@ async function run() {
         $set: {
           amount:
             parseInt(senderDetailsFromDatabase.amount) -
-            parseInt(req.body.amount),
+            parseInt(req.body.amount + 5),
         },
         $push: { transictionHistory: SenderTransictionHistory },
       };
