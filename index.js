@@ -56,6 +56,9 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     // collection names
     const userCollection = client.db("lenden").collection("userCollection");
+    const transictionHistoryCollection = client
+      .db("lenden")
+      .collection("transictionHistoryCollection");
 
     const cookieOptions = {
       httpOnly: true,
@@ -162,7 +165,7 @@ async function run() {
         }
       });
 
-      const allTransictiorHistory = {
+      const transictionHistory = {
         senderNumber,
         ReciverNumber,
         amount: req.body.amount,
@@ -196,7 +199,9 @@ async function run() {
         },
         $push: { transictionHistory: ReciverTransictionHistory },
       };
-
+      const result3 = await transictionHistoryCollection.insertOne(
+        transictionHistory
+      );
       const result = await userCollection.updateOne(
         {
           number: senderNumber,
