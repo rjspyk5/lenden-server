@@ -164,7 +164,8 @@ async function run() {
           return res.send({ result: "Insufficent Amount" });
         }
       });
-
+      // data created for pusing on database
+      // cashout req er khetre status pending thakbe..and pore jkhn agent accept korbe tkhn success asbhe
       const transictionHistory = {
         senderNumber,
         ReciverNumber,
