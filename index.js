@@ -146,7 +146,7 @@ async function run() {
       const password = req.body.pin;
       const ReciverNumber = req.body.number;
       const senderNumber = req.body.senderNumber;
-      const amount = req.body.amount;
+      const amount = parseInt(req.body.amount);
       const method = req.body.method;
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
@@ -164,59 +164,79 @@ async function run() {
         }
       });
 
-      // Balance Check
-
+      // Balance Check if send money
       if (method === "send_money") {
-        if (senderDetailsFromDatabase?.amount < amount) {
-          return res.send({ result: "Insufficent Balance" });
-        }
-
-        if (amount > 99 && senderDetailsFromDatabase?.amount < amount + 5) {
+        if (
+          senderDetailsFromDatabase?.amount < amount ||
+          (amount > 99 && senderDetailsFromDatabase?.amount < amount + 5)
+        ) {
           return res.send({ result: "Insufficent Balance" });
         }
       }
-
-      // todo:cahsout method onujayi balance check
+      // Balance Check if cahsout
+      if (method === "cash_out") {
+        if (senderDetailsFromDatabase?.amount < amount * 1.015) {
+          return res.send({ result: "Insufficent Balance" });
+        }
+      }
+      let charge;
+      // set charge based on method
+      if (method === "cash_out") {
+        charge = amount * 1.015 - amount;
+      }
+      if (method === "send_money") {
+        amount < 99 ? (charge = 0) : (charge = 5);
+      }
 
       // data created for pusing on database
       //todo: cashout req er khetre status pending thakbe..and pore jkhn agent accept korbe tkhn success asbhe
+      //todo:eikhan e unique id dite hbe jate transciton id die search kora jai..time die dea jete pare
+      const transictionId = "test";
       const transictionHistory = {
+        transictionId,
         senderNumber,
         ReciverNumber,
         amount: req.body.amount,
         method: req.body.method,
+        charge,
       };
+
       const ReciverTransictionHistory = {
+        transictionId,
         senderNumber,
         amount: req.body.amount,
         method: "received_money",
       };
+
       const SenderTransictionHistory = {
+        transictionId,
         ReciverNumber,
-        method: "send_money",
+        method: method,
         amount: req.body.amount,
+        charge,
       };
 
       const updateDocForSender = {
         $set: {
           amount:
-            parseInt(senderDetailsFromDatabase.amount) -
-            parseInt(req.body.amount + 5),
+            parseInt(senderDetailsFromDatabase.amount) - (amount + charge),
         },
         $push: { transictionHistory: SenderTransictionHistory },
       };
 
+      // Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
+
       const updateDocForReceiver = {
         $set: {
-          amount:
-            parseInt(receiverAccountDetailsFromDatabase.amount) +
-            parseInt(req.body.amount),
+          amount: parseInt(receiverAccountDetailsFromDatabase.amount) + amount,
         },
         $push: { transictionHistory: ReciverTransictionHistory },
       };
+
       const result3 = await transictionHistoryCollection.insertOne(
         transictionHistory
       );
+
       const result = await userCollection.updateOne(
         {
           number: senderNumber,
