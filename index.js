@@ -146,6 +146,8 @@ async function run() {
       const password = req.body.pin;
       const ReciverNumber = req.body.number;
       const senderNumber = req.body.senderNumber;
+      const amount = req.body.amount;
+      const method = req.body.method;
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
         number: senderNumber,
@@ -160,12 +162,24 @@ async function run() {
         if (!ress) {
           return res.send({ result: "password didn't match" });
         }
-        if (senderDetailsFromDatabase?.amount < req.body.amount + 5) {
-          return res.send({ result: "Insufficent Amount" });
-        }
       });
+
+      // Balance Check
+
+      if (method === "send_money") {
+        if (senderDetailsFromDatabase?.amount < amount) {
+          return res.send({ result: "Insufficent Balance" });
+        }
+
+        if (amount > 99 && senderDetailsFromDatabase?.amount < amount + 5) {
+          return res.send({ result: "Insufficent Balance" });
+        }
+      }
+
+      // todo:cahsout method onujayi balance check
+
       // data created for pusing on database
-      // cashout req er khetre status pending thakbe..and pore jkhn agent accept korbe tkhn success asbhe
+      //todo: cashout req er khetre status pending thakbe..and pore jkhn agent accept korbe tkhn success asbhe
       const transictionHistory = {
         senderNumber,
         ReciverNumber,
