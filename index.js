@@ -196,12 +196,12 @@ async function run() {
 
       const updateDocForSender = {
         $inc: {
-          amount: amount + charge,
+          amount: -(amount + charge),
         },
         // $push: { transictionHistory: SenderTransictionHistory },
       };
 
-      // Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
+      //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
       const updateDocForReceiver = {
         $inc: {
