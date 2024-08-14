@@ -172,7 +172,7 @@ async function run() {
       let charge;
       if (method === "cash_out") {
         charge = amount * 1.015 - amount;
-        transictionHistory.status = "pending";
+        transictionHistory.status = "success";
       }
       if (method === "send_money") {
         amount < 99 ? (charge = 0) : (charge = 5);
