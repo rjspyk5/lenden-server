@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { hashedPass, verifyToken } = require("./middleware.js");
+
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
@@ -18,28 +20,6 @@ app.use(
   })
 );
 app.use(cookieParser());
-
-//custom middleware
-const hashedPass = async (req, res, next) => {
-  const password = req.body.password;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  req.body.password = hashedPassword;
-  next();
-};
-
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-  if (!token) {
-    return res.status(401).send({ message: "Not authorized" });
-  }
-  jwt.verify(token, process.env.token, (er, decoded) => {
-    if (er) {
-      res.status(401).send({ message: "unauthorized" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
 
 // database connection
 const client = new MongoClient(uri, {
@@ -179,58 +159,55 @@ async function run() {
           return res.send({ result: "Insufficent Balance" });
         }
       }
-      let charge;
-      // set charge based on method
-      if (method === "cash_out") {
-        charge = amount * 1.015 - amount;
-      }
-      if (method === "send_money") {
-        amount < 99 ? (charge = 0) : (charge = 5);
-      }
 
       // data created for pusing on database
-      //todo: cashout req er khetre status pending thakbe..and pore jkhn agent accept korbe tkhn success asbhe
-      //todo:eikhan e unique id dite hbe jate transciton id die search kora jai..time die dea jete pare
-      const transictionId = "test";
       const transictionHistory = {
-        transictionId,
         senderNumber,
         ReciverNumber,
         amount: req.body.amount,
         method: req.body.method,
-        charge,
       };
 
-      const ReciverTransictionHistory = {
-        transictionId,
-        senderNumber,
-        amount: req.body.amount,
-        method: "received_money",
-      };
+      // set charge and status based on method
+      let charge;
+      if (method === "cash_out") {
+        charge = amount * 1.015 - amount;
+        transictionHistory.status = "pending";
+      }
+      if (method === "send_money") {
+        amount < 99 ? (charge = 0) : (charge = 5);
+        transictionHistory.status = "success";
+      }
+      transictionHistory.charge = charge;
+      // const ReciverTransictionHistory = {
+      //   transictionId,
+      //   senderNumber,
+      //   amount: req.body.amount,
+      //   method: "received_money",
+      // };
 
-      const SenderTransictionHistory = {
-        transictionId,
-        ReciverNumber,
-        method: method,
-        amount: req.body.amount,
-        charge,
-      };
+      // const SenderTransictionHistory = {
+      //   transictionId,
+      //   ReciverNumber,
+      //   method: method,
+      //   amount: req.body.amount,
+      //   charge,
+      // };
 
       const updateDocForSender = {
-        $set: {
-          amount:
-            parseInt(senderDetailsFromDatabase.amount) - (amount + charge),
+        $inc: {
+          amount: amount + charge,
         },
-        $push: { transictionHistory: SenderTransictionHistory },
+        // $push: { transictionHistory: SenderTransictionHistory },
       };
 
       // Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
       const updateDocForReceiver = {
-        $set: {
-          amount: parseInt(receiverAccountDetailsFromDatabase.amount) + amount,
+        $inc: {
+          amount: amount,
         },
-        $push: { transictionHistory: ReciverTransictionHistory },
+        // $push: { transictionHistory: ReciverTransictionHistory },
       };
 
       const result3 = await transictionHistoryCollection.insertOne(
@@ -247,7 +224,7 @@ async function run() {
         { number: ReciverNumber },
         updateDocForReceiver
       );
-      console.log(result, result2);
+      console.log(result, result2, result3);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
