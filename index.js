@@ -228,11 +228,10 @@ async function run() {
       );
       console.log(result, result2, result3);
     });
-
+    // api to get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query
     app.get("/requesttoagent/:number", async (req, res) => {
       const agentNumber = req.params?.number;
       const method = req.query?.method;
-      console.log(agentNumber, method);
       const query = {
         $and: [
           {
@@ -240,10 +239,11 @@ async function run() {
           },
           { method: method },
           {
-            status: "success",
+            status: "pending",
           },
         ],
       };
+      console.log(query);
       const result = await transictionHistoryCollection.find(query).toArray();
       res.send(result);
     });
