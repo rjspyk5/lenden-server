@@ -103,6 +103,7 @@ async function run() {
                 accountStats: isAnyAccountHave.status,
                 role: isAnyAccountHave?.role,
                 balance: isAnyAccountHave?.amount,
+                number: isAnyAccountHave?.number,
               },
             });
           } else {
@@ -243,9 +244,20 @@ async function run() {
           },
         ],
       };
-      console.log(query);
       const result = await transictionHistoryCollection.find(query).toArray();
       res.send(result);
+    });
+    // api create to update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
+    app.patch("/reqesttoagent/:id", async (req, res) => {
+      const id = req.params.id;
+      const statusType = req.query.status;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: statusType,
+        },
+      };
+      const result = transictionHistoryCollection.updateOne(query, updateDoc);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
