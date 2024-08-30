@@ -102,6 +102,7 @@ async function run() {
                 photo: isAnyAccountHave.photo,
                 accountStats: isAnyAccountHave.status,
                 role: isAnyAccountHave?.role,
+                balance: isAnyAccountHave?.amount,
               },
             });
           } else {
@@ -132,6 +133,7 @@ async function run() {
       const senderDetailsFromDatabase = await userCollection.findOne({
         number: senderNumber,
       });
+
       // find receiverAccountDetails from database
       const receiverAccountDetailsFromDatabase = await userCollection.findOne({
         number: ReciverNumber,
@@ -225,6 +227,25 @@ async function run() {
         updateDocForReceiver
       );
       console.log(result, result2, result3);
+    });
+
+    app.get("/requesttoagent/:number", async (req, res) => {
+      const agentNumber = req.params?.number;
+      const method = req.query?.method;
+      console.log(agentNumber, method);
+      const query = {
+        $and: [
+          {
+            ReciverNumber: agentNumber,
+          },
+          { method: method },
+          {
+            status: "success",
+          },
+        ],
+      };
+      const result = await transictionHistoryCollection.find(query).toArray();
+      res.send(result);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
