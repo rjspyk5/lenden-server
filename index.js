@@ -15,7 +15,12 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5174", "http://localhost:5173"],
+    origin: [
+      "http://localhost:5174",
+      "http://localhost:5173",
+      "https://lendenbdd.web.app",
+      "https://lendenbdd.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -229,6 +234,8 @@ async function run() {
         ],
       };
       const result = await transictionHistoryCollection.find(query).toArray();
+      console.log(agentNumber, method, query);
+      console.log(result);
       res.send(result);
     });
     // api create to update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
@@ -251,4 +258,4 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.listen(port, () => console.log("server is running"));
+app.listen(port);
