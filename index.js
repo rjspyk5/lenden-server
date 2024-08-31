@@ -112,15 +112,12 @@ async function run() {
         });
       }
     });
-    app.get("/checkrole", async (req, res) => {
+    app.get("/user", async (req, res) => {
       const emailOrNumber = req.query?.emailOrNumber;
       const query = {
         $or: [{ email: emailOrNumber }, { number: emailOrNumber }],
       };
-      const options = {
-        projection: { role: 1, name: 1, number: 1 },
-      };
-      const result = await userCollection.findOne(query, options);
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
 
@@ -130,6 +127,7 @@ async function run() {
       const senderNumber = req.body.senderNumber;
       const amount = parseInt(req.body.amount);
       const method = req.body.method;
+
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
         number: senderNumber,
@@ -175,28 +173,13 @@ async function run() {
       let charge;
       if (method === "cash_out") {
         charge = amount * 1.015 - amount;
-        transictionHistory.status = "success";
+        transictionHistory.status = "pending";
       }
       if (method === "send_money") {
         amount < 99 ? (charge = 0) : (charge = 5);
         transictionHistory.status = "success";
       }
       transictionHistory.charge = charge;
-      // const ReciverTransictionHistory = {
-      //   transictionId,
-      //   senderNumber,
-      //   amount: req.body.amount,
-      //   method: "received_money",
-      // };
-
-      // const SenderTransictionHistory = {
-      //   transictionId,
-      //   ReciverNumber,
-      //   method: method,
-      //   amount: req.body.amount,
-      //   charge,
-      // };
-
       const updateDocForSender = {
         $inc: {
           amount: -(amount + charge),
@@ -227,7 +210,7 @@ async function run() {
         { number: ReciverNumber },
         updateDocForReceiver
       );
-      console.log(result, result2, result3);
+      res.send({ result, result2, result3 });
     });
     // api to get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query
     app.get("/requesttoagent/:number", async (req, res) => {
