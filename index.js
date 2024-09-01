@@ -156,6 +156,12 @@ async function run() {
       });
 
       const afterPasswordVerification = async () => {
+        // Balance Check without charging operation
+
+        if (senderDetailsFromDatabase?.amount < amount) {
+          return res.send({ result: "Insufficent Balance" });
+        }
+
         // Balance Check if send money
         if (method === "send_money") {
           if (
@@ -246,7 +252,6 @@ async function run() {
             { number: ReciverNumber },
             updateDocForReceiver
           );
-
           return res.send({ result, result2, result3 });
         }
       };
