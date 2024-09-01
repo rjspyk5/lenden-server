@@ -183,47 +183,72 @@ async function run() {
         // set charge and status based on method
         let charge = 0;
         transictionHistory.status = "pending";
+        let updateDocForSender;
+        let updateDocForReceiver;
         if (method === "cash_out") {
           charge = amount * 1.015 - amount;
-          transictionHistory.status = "pending";
+          transictionHistory.status = "success";
+          updateDocForSender = {
+            $inc: {
+              amount: -(amount + charge),
+            },
+          };
+          updateDocForReceiver = {
+            $inc: {
+              amount: amount,
+            },
+          };
         }
         if (method === "send_money") {
           amount < 99 ? (charge = 0) : (charge = 5);
           transictionHistory.status = "success";
+          updateDocForSender = {
+            $inc: {
+              amount: -(amount + charge),
+            },
+          };
+          updateDocForReceiver = {
+            $inc: {
+              amount: amount,
+            },
+          };
         }
+
         transictionHistory.charge = charge;
-        const updateDocForSender = {
-          $inc: {
-            amount: -(amount + charge),
-          },
-          // $push: { transictionHistory: SenderTransictionHistory },
-        };
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
-        const updateDocForReceiver = {
-          $inc: {
-            amount: amount,
-          },
-          // $push: { transictionHistory: ReciverTransictionHistory },
-        };
+        // make universel api for cash in ,add money,withdraw
+        if (
+          method === "cash_in" ||
+          method === "add_money" ||
+          method === "withdraw_money"
+        ) {
+          transictionHistory.status = "pending";
+          const result3 = await transictionHistoryCollection.insertOne(
+            transictionHistory
+          );
 
-        const result3 = await transictionHistoryCollection.insertOne(
-          transictionHistory
-        );
+          return res.send({ result3 });
+        }
+        // if send Money or cashout then it will run
+        else {
+          const result3 = await transictionHistoryCollection.insertOne(
+            transictionHistory
+          );
+          const result = await userCollection.updateOne(
+            {
+              number: senderNumber,
+            },
+            updateDocForSender
+          );
+          const result2 = await userCollection.updateOne(
+            { number: ReciverNumber },
+            updateDocForReceiver
+          );
 
-        const result = await userCollection.updateOne(
-          {
-            number: senderNumber,
-          },
-          updateDocForSender
-        );
-        const result2 = await userCollection.updateOne(
-          { number: ReciverNumber },
-          updateDocForReceiver
-        );
-
-        return res.send({ result, result2, result3 });
+          return res.send({ result, result2, result3 });
+        }
       };
     });
     // api to get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query
