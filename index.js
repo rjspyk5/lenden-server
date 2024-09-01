@@ -142,81 +142,89 @@ async function run() {
       const receiverAccountDetailsFromDatabase = await userCollection.findOne({
         number: ReciverNumber,
       });
-      // password verification
+      // password verification process
       const hashedPass = senderDetailsFromDatabase.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
+        // wrong password will go back from here
         if (!ress) {
           return res.send({ result: "password didn't match" });
         }
+        // if password correct then this operation execute
+        else {
+          afterPasswordVerification();
+        }
       });
 
-      // Balance Check if send money
-      if (method === "send_money") {
-        if (
-          senderDetailsFromDatabase?.amount < amount ||
-          (amount > 99 && senderDetailsFromDatabase?.amount < amount + 5)
-        ) {
-          return res.send({ result: "Insufficent Balance" });
+      const afterPasswordVerification = async () => {
+        // Balance Check if send money
+        if (method === "send_money") {
+          if (
+            senderDetailsFromDatabase?.amount < amount ||
+            (amount > 99 && senderDetailsFromDatabase?.amount < amount + 5)
+          ) {
+            return res.send({ result: "Insufficent Balance" });
+          }
         }
-      }
-      // Balance Check if cahsout
-      if (method === "cash_out") {
-        if (senderDetailsFromDatabase?.amount < amount * 1.015) {
-          return res.send({ result: "Insufficent Balance" });
+        // Balance Check if cahsout
+        if (method === "cash_out") {
+          if (senderDetailsFromDatabase?.amount < amount * 1.015) {
+            return res.send({ result: "Insufficent Balance" });
+          }
         }
-      }
 
-      // data created for pusing on database
-      const transictionHistory = {
-        senderNumber,
-        ReciverNumber,
-        amount: req.body.amount,
-        method: req.body.method,
-      };
+        // data created for pusing on database
+        const transictionHistory = {
+          senderNumber,
+          ReciverNumber,
+          amount: req.body.amount,
+          method: req.body.method,
+        };
 
-      // set charge and status based on method
-      let charge = 0;
-      transictionHistory.status = "pending";
-      if (method === "cash_out") {
-        charge = amount * 1.015 - amount;
+        // set charge and status based on method
+        let charge = 0;
         transictionHistory.status = "pending";
-      }
-      if (method === "send_money") {
-        amount < 99 ? (charge = 0) : (charge = 5);
-        transictionHistory.status = "success";
-      }
-      transictionHistory.charge = charge;
-      const updateDocForSender = {
-        $inc: {
-          amount: -(amount + charge),
-        },
-        // $push: { transictionHistory: SenderTransictionHistory },
+        if (method === "cash_out") {
+          charge = amount * 1.015 - amount;
+          transictionHistory.status = "pending";
+        }
+        if (method === "send_money") {
+          amount < 99 ? (charge = 0) : (charge = 5);
+          transictionHistory.status = "success";
+        }
+        transictionHistory.charge = charge;
+        const updateDocForSender = {
+          $inc: {
+            amount: -(amount + charge),
+          },
+          // $push: { transictionHistory: SenderTransictionHistory },
+        };
+
+        //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
+
+        const updateDocForReceiver = {
+          $inc: {
+            amount: amount,
+          },
+          // $push: { transictionHistory: ReciverTransictionHistory },
+        };
+
+        const result3 = await transictionHistoryCollection.insertOne(
+          transictionHistory
+        );
+
+        const result = await userCollection.updateOne(
+          {
+            number: senderNumber,
+          },
+          updateDocForSender
+        );
+        const result2 = await userCollection.updateOne(
+          { number: ReciverNumber },
+          updateDocForReceiver
+        );
+
+        return res.send({ result, result2, result3 });
       };
-
-      //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
-
-      const updateDocForReceiver = {
-        $inc: {
-          amount: amount,
-        },
-        // $push: { transictionHistory: ReciverTransictionHistory },
-      };
-
-      const result3 = await transictionHistoryCollection.insertOne(
-        transictionHistory
-      );
-
-      const result = await userCollection.updateOne(
-        {
-          number: senderNumber,
-        },
-        updateDocForSender
-      );
-      const result2 = await userCollection.updateOne(
-        { number: ReciverNumber },
-        updateDocForReceiver
-      );
-      res.send({ result, result2, result3 });
     });
     // api to get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query
     app.get("/requesttoagent/:number", async (req, res) => {
