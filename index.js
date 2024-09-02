@@ -147,7 +147,7 @@ async function run() {
       bcrypt.compare(password, hashedPass, (er, ress) => {
         // wrong password will go back from here
         if (!ress) {
-          return res.send({ result: "password didn't match" });
+          return res.send({ result: "Password didn't match" });
         }
         // if password correct then this operation execute
         else {
@@ -288,6 +288,25 @@ async function run() {
         },
       };
       const result = transictionHistoryCollection.updateOne(query, updateDoc);
+    });
+
+    // History api
+    // example query http://localhost:5000/history?method=send_money&&number=01684883865
+    app.get("/history", async (req, res) => {
+      const number = req?.query?.number;
+      const method = req?.query?.method;
+      let query = {
+        $or: [{ senderNumber: number }, { ReciverNumber: number }],
+      };
+      if (method) {
+        query = {
+          method: method,
+          $or: [{ senderNumber: number }, { ReciverNumber: number }],
+        };
+      }
+
+      const result = await transictionHistoryCollection.find(query).toArray();
+      res.send(result);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
