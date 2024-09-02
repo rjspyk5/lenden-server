@@ -273,8 +273,7 @@ async function run() {
         ],
       };
       const result = await transictionHistoryCollection.find(query).toArray();
-      console.log(agentNumber, method, query);
-      console.log(result);
+
       res.send(result);
     });
     // api create to update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
