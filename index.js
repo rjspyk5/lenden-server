@@ -128,10 +128,15 @@ async function run() {
 
     app.post("/sendmoney", async (req, res) => {
       const password = req.body.pin;
-      const ReciverNumber = req.body.number;
-      const senderNumber = req.body.senderNumber;
+      let ReciverNumber = req.body.number;
+      let senderNumber = req.body.senderNumber;
       const amount = parseInt(req.body.amount);
       const method = req.body.method;
+
+      if (method === "cash_in" || method === "withdraw_money") {
+        ReciverNumber = req.body.senderNumber;
+        senderNumber = req.body.number;
+      }
 
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
@@ -280,12 +285,16 @@ async function run() {
       const id = req.params.id;
       const statusType = req.query.status;
       const query = { _id: new ObjectId(id) };
-      const updateDoc = {
+      const updateDocForHistory = {
         $set: {
           status: statusType,
         },
       };
-      const result = transictionHistoryCollection.updateOne(query, updateDoc);
+
+      const result = transictionHistoryCollection.updateOne(
+        query,
+        updateDocForHistory
+      );
     });
 
     // History api
