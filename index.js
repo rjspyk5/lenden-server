@@ -268,7 +268,7 @@ async function run() {
       const query = {
         $and: [
           {
-            ReciverNumber: agentNumber,
+            senderNumber: agentNumber,
           },
           { method: method },
           {
@@ -276,6 +276,7 @@ async function run() {
           },
         ],
       };
+
       const result = await transictionHistoryCollection.find(query).toArray();
 
       res.send(result);
@@ -284,6 +285,21 @@ async function run() {
     app.patch("/reqesttoagent/:id", async (req, res) => {
       const id = req.params.id;
       const statusType = req.query.status;
+      const senderNumber = req.query.sender;
+      const recver = req.query.rcver;
+      const amount = parseInt(req.query.amount);
+      const senderQuery = { number: senderNumber };
+      const updateDocSender = {
+        $inc: {
+          amount: -amount,
+        },
+      };
+      const rcvrQuery = { number: recver };
+      const updateDocRcvr = {
+        $inc: {
+          amount: amount,
+        },
+      };
       const query = { _id: new ObjectId(id) };
       const updateDocForHistory = {
         $set: {
@@ -295,6 +311,12 @@ async function run() {
         query,
         updateDocForHistory
       );
+      const result2 = userCollection.updateOne(rcvrQuery, updateDocRcvr);
+      const result3 = userCollection.updateOne(
+        senderQuery,
+        updateDocForHistory
+      );
+      res.send({ result, result2, result3 });
     });
 
     // History api
