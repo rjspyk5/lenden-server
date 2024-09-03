@@ -226,16 +226,15 @@ async function run() {
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
         // make universel api for cash in ,add money,withdraw
+
         if (
           method === "cash_in" ||
           method === "add_money" ||
           method === "withdraw_money"
         ) {
-          transictionHistory.status = "pending";
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
-
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
