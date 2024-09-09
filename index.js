@@ -127,10 +127,15 @@ async function run() {
 
     app.post("/sendmoney", async (req, res) => {
       const password = req.body.pin;
-      const ReciverNumber = req.body.number;
-      const senderNumber = req.body.senderNumber;
+      let ReciverNumber = req.body.number;
+      let senderNumber = req.body.senderNumber;
       const amount = parseInt(req.body.amount);
       const method = req.body.method;
+
+      if (method === "cash_in" || method === "withdraw_money") {
+        ReciverNumber = req.body.senderNumber;
+        senderNumber = req.body.number;
+      }
 
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
@@ -225,16 +230,15 @@ async function run() {
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
         // make universel api for cash in ,add money,withdraw
+
         if (
           method === "cash_in" ||
           method === "add_money" ||
           method === "withdraw_money"
         ) {
-          transictionHistory.status = "pending";
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
-
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
@@ -263,7 +267,7 @@ async function run() {
       const query = {
         $and: [
           {
-            ReciverNumber: agentNumber,
+            senderNumber: agentNumber,
           },
           { method: method },
           {
@@ -271,22 +275,47 @@ async function run() {
           },
         ],
       };
+
       const result = await transictionHistoryCollection.find(query).toArray();
-      console.log(agentNumber, method, query);
-      console.log(result);
+
       res.send(result);
     });
     // api create to update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
     app.patch("/reqesttoagent/:id", async (req, res) => {
       const id = req.params.id;
       const statusType = req.query.status;
+      const senderNumber = req.query.sender;
+      const recver = req.query.rcver;
+      const amount = parseInt(req.query.amount);
+      const senderQuery = { number: senderNumber };
+      const updateDocSender = {
+        $inc: {
+          amount: -amount,
+        },
+      };
+      const rcvrQuery = { number: recver };
+      const updateDocRcvr = {
+        $inc: {
+          amount: amount,
+        },
+      };
       const query = { _id: new ObjectId(id) };
-      const updateDoc = {
+      const updateDocForHistory = {
         $set: {
           status: statusType,
         },
       };
-      const result = transictionHistoryCollection.updateOne(query, updateDoc);
+
+      const result = transictionHistoryCollection.updateOne(
+        query,
+        updateDocForHistory
+      );
+      const result2 = userCollection.updateOne(rcvrQuery, updateDocRcvr);
+      const result3 = userCollection.updateOne(
+        senderQuery,
+        updateDocForHistory
+      );
+      res.send({ result, result2, result3 });
     });
 
     // History api
