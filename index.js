@@ -116,6 +116,23 @@ async function run() {
         });
       }
     });
+
+    // all user
+    app.get("/users", async (req, res) => {
+      const option = {
+        projection: {
+          name: 1,
+          email: 1,
+          role: 1,
+          number: 1,
+          accountStats: 1,
+          amount: 1,
+        },
+      };
+      const result = await userCollection.find({}, option).toArray();
+      res.send(result);
+    });
+    // checkUser api
     app.get("/user", async (req, res) => {
       const emailOrNumber = req.query?.emailOrNumber;
       const query = {
