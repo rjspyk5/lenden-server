@@ -84,7 +84,6 @@ async function run() {
           { number: req.body.emailOrNumber },
         ],
       };
-
       // chekcing email or number validity
       const isAnyAccountHave = await userCollection.findOne(query);
       if (!isAnyAccountHave) {
