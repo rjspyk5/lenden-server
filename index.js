@@ -335,10 +335,10 @@ async function run() {
     });
 
     // History api
-    // example query http://localhost:5000/history?method=send_money&&number=01684883865
+    // example query http://localhost:5000/history?method=send_money&number=01684883865
     app.get("/history", async (req, res) => {
-      const number = req?.query?.number;
-      const method = req?.query?.method;
+      const number = req?.query?.number || null;
+      const method = req?.query?.method || null;
       let query = {
         $or: [{ senderNumber: number }, { ReciverNumber: number }],
       };
@@ -348,9 +348,13 @@ async function run() {
           $or: [{ senderNumber: number }, { ReciverNumber: number }],
         };
       }
+      if (number) {
+        const result = await transictionHistoryCollection.find(query).toArray();
+        return res.send(result);
+      }
 
-      const result = await transictionHistoryCollection.find(query).toArray();
-      res.send(result);
+      const result = await transictionHistoryCollection.find().toArray();
+      return res.send(result);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
