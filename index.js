@@ -276,10 +276,11 @@ async function run() {
         }
       };
     });
-    // api to get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query
+    // api for get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query http://localhost:5000/requesttoagent/01684883865?method=send_money
     app.get("/requesttoagent/:number", async (req, res) => {
       const agentNumber = req.params?.number;
       const method = req.query?.method;
+      // todo: method onujai query er vhitor senderNumber change korte hbe
       const query = {
         $and: [
           {
@@ -296,7 +297,7 @@ async function run() {
 
       res.send(result);
     });
-    // api create to update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
+    // api for update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
     app.patch("/reqesttoagent/:id", async (req, res) => {
       const id = req.params.id;
       const statusType = req.query.status;
