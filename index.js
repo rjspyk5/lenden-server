@@ -148,11 +148,6 @@ async function run() {
       const amount = parseInt(req.body.amount);
       const method = req.body.method;
 
-      if (method === "cash_in" || method === "withdraw_money") {
-        ReciverNumber = req.body.senderNumber;
-        senderNumber = req.body.number;
-      }
-
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
         number: senderNumber,
@@ -162,6 +157,7 @@ async function run() {
       const receiverAccountDetailsFromDatabase = await userCollection.findOne({
         number: ReciverNumber,
       });
+
       // password verification process
       const hashedPass = senderDetailsFromDatabase.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
@@ -177,7 +173,7 @@ async function run() {
 
       const afterPasswordVerification = async () => {
         // Balance Check without charging operation
-        if (method === "withdraw_money") {
+        if (method === "deposit_money") {
           if (senderDetailsFromDatabase?.amount < amount) {
             return res.send({ result: "Insufficent Balance" });
           }
@@ -200,6 +196,11 @@ async function run() {
         }
 
         // data created for pusing on database
+        if (method === "cash_in" || method === "deposit_money") {
+          ReciverNumber = req.body.senderNumber;
+          senderNumber = req.body.number;
+        }
+
         const transictionHistory = {
           senderNumber,
           ReciverNumber,
@@ -246,15 +247,16 @@ async function run() {
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
         // make universel api for cash in ,add money,withdraw
-
+        console.log(transictionHistory);
         if (
           method === "cash_in" ||
-          method === "add_money" ||
+          method === "deposit_money" ||
           method === "withdraw_money"
         ) {
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
+
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
