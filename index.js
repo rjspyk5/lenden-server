@@ -278,16 +278,18 @@ async function run() {
         }
       };
     });
-    // api for get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query http://localhost:5000/requesttoagent/01684883865?method=send_money
-    app.get("/requesttoagent/:number", async (req, res) => {
+    // api for get pending send_money,cash_out etc related data get to use this give number as params and give method without qutation as query http://localhost:5000/pendingreq/01684883865?method=send_money
+    app.get("/pendingreq/:number", async (req, res) => {
       const agentNumber = req.params?.number;
       const method = req.query?.method;
       // todo: method onujai query er vhitor senderNumber change korte hbe
+      const number =
+        method === "withdraw_money"
+          ? { ReciverNumber: agentNumber }
+          : { senderNumber: agentNumber };
       const query = {
         $and: [
-          {
-            senderNumber: agentNumber,
-          },
+          number,
           { method: method },
           {
             status: "pending",
@@ -300,7 +302,8 @@ async function run() {
       res.send(result);
     });
     // api for update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
-    app.patch("/reqesttoagent/:id", async (req, res) => {
+    // example api     `http://localhost:5000/pendingreq/${id}?status=${action}&sender=${sender}&rcver=${rcver}&amount=${amount}`
+    app.patch("/pendingreq/:id", async (req, res) => {
       const id = req.params.id;
       const statusType = req.query.status;
       const senderNumber = req.query.sender;
