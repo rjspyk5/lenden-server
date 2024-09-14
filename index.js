@@ -309,6 +309,7 @@ async function run() {
       const senderNumber = req.query.sender;
       const recver = req.query.rcver;
       const amount = parseInt(req.query.amount);
+      console.log(senderNumber, recver, amount);
       const senderQuery = { number: senderNumber };
       const updateDocSender = {
         $inc: {
@@ -328,15 +329,16 @@ async function run() {
         },
       };
 
-      const result = transictionHistoryCollection.updateOne(
+      const result = await transictionHistoryCollection.updateOne(
         query,
         updateDocForHistory
       );
-      const result2 = userCollection.updateOne(rcvrQuery, updateDocRcvr);
-      const result3 = userCollection.updateOne(
+      const result2 = await userCollection.updateOne(rcvrQuery, updateDocRcvr);
+      const result3 = await userCollection.updateOne(
         senderQuery,
-        updateDocForHistory
+        updateDocSender
       );
+      console.log(result, result2, result3);
       res.send({ result, result2, result3 });
     });
 
