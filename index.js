@@ -309,7 +309,6 @@ async function run() {
       const senderNumber = req.query.sender;
       const recver = req.query.rcver;
       const amount = parseInt(req.query.amount);
-      console.log(senderNumber, recver, amount);
       const senderQuery = { number: senderNumber };
       const updateDocSender = {
         $inc: {
@@ -329,17 +328,27 @@ async function run() {
         },
       };
 
-      const result = await transictionHistoryCollection.updateOne(
-        query,
-        updateDocForHistory
-      );
-      const result2 = await userCollection.updateOne(rcvrQuery, updateDocRcvr);
-      const result3 = await userCollection.updateOne(
-        senderQuery,
-        updateDocSender
-      );
-      console.log(result, result2, result3);
-      res.send({ result, result2, result3 });
+      if (statusType === "cancel") {
+        const result = await transictionHistoryCollection.updateOne(
+          query,
+          updateDocForHistory
+        );
+        res.send({ result });
+      } else {
+        const result = await transictionHistoryCollection.updateOne(
+          query,
+          updateDocForHistory
+        );
+        const result2 = await userCollection.updateOne(
+          rcvrQuery,
+          updateDocRcvr
+        );
+        const result3 = await userCollection.updateOne(
+          senderQuery,
+          updateDocSender
+        );
+        res.send({ result, result2, result3 });
+      }
     });
 
     // History api
