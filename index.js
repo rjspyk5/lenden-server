@@ -124,7 +124,8 @@ async function run() {
           email: 1,
           role: 1,
           number: 1,
-          accountStats: 1,
+
+          accountStatus: 1,
           amount: 1,
         },
       };
