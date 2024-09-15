@@ -141,7 +141,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/sendmoney", async (req, res) => {
+    app.post("/transactions", async (req, res) => {
       const password = req.body.pin;
       let ReciverNumber = req.body.number;
       let senderNumber = req.body.senderNumber;
