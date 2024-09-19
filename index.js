@@ -124,13 +124,22 @@ async function run() {
           email: 1,
           role: 1,
           number: 1,
-
           accountStatus: 1,
           amount: 1,
         },
       };
       const result = await userCollection.find({}, option).toArray();
-      res.send(result);
+      const data = result.map((el) => {
+        return {
+          name: el.name,
+          number: el.number,
+          email: el.email,
+          role: el.role,
+          amount: el.amount,
+          accountStatus: el.accountStatus,
+        };
+      });
+      res.send(data);
     });
     // checkUser api
     app.get("/user", async (req, res) => {
@@ -248,7 +257,7 @@ async function run() {
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
         // make universel api for cash in ,add money,withdraw
-        console.log(transictionHistory);
+
         if (
           method === "cash_in" ||
           method === "deposit_money" ||
