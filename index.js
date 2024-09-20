@@ -131,6 +131,7 @@ async function run() {
       const result = await userCollection.find({}, option).toArray();
       const data = result.map((el) => {
         return {
+          _id: el._id,
           name: el.name,
           number: el.number,
           email: el.email,
@@ -375,13 +376,27 @@ async function run() {
           $or: [{ senderNumber: number }, { ReciverNumber: number }],
         };
       }
+      let result;
       if (number) {
-        const result = await transictionHistoryCollection.find(query).toArray();
-        return res.send(result);
+        result = await transictionHistoryCollection.find(query).toArray();
+      } else {
+        result = await transictionHistoryCollection.find().toArray();
       }
 
-      const result = await transictionHistoryCollection.find().toArray();
-      return res.send(result);
+      const data = result.map((el) => {
+        return {
+          _id: el._id,
+          senderNumber: el.senderNumber,
+          ReciverNumber: el.ReciverNumber,
+          amount: el.amount,
+          charge: parseFloat(el.charge.toFixed(2)),
+          method: el.method,
+          date: el.date || null,
+          time: el.time || null,
+          status: el.status,
+        };
+      });
+      return res.send(data);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
