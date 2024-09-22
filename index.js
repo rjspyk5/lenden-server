@@ -6,10 +6,10 @@ const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { hashedPass, verifyToken } = require("./middleware.js");
-
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
+const { formatedTime, formatedDate } = require("./lib/formatedTime.js");
 
 // middlewares
 app.use(express.json());
@@ -398,8 +398,8 @@ async function run() {
           amount: el.amount,
           charge: parseFloat(el.charge.toFixed(2)),
           method: el.method,
-          date: el.date?.toISOString().split("T")[0] || null,
-          time: el.date?.toTimeString().split(" ")[0] || null,
+          date: el.date ? formatedDate(el?.date) : null,
+          time: el.date ? formatedTime(el?.date) : null,
           status: el.status,
         };
       });
