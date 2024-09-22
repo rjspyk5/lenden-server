@@ -158,6 +158,7 @@ async function run() {
       let senderNumber = req.body.senderNumber;
       const amount = parseInt(req.body.amount);
       const method = req.body.method;
+      const date = new Date();
 
       // find own account database
       const senderDetailsFromDatabase = await userCollection.findOne({
@@ -215,6 +216,7 @@ async function run() {
         const transictionHistory = {
           senderNumber,
           ReciverNumber,
+          date,
           amount: req.body.amount,
           method: req.body.method,
         };
@@ -307,9 +309,7 @@ async function run() {
           },
         ],
       };
-
       const result = await transictionHistoryCollection.find(query).toArray();
-
       res.send(result);
     });
     // api for update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
@@ -377,10 +377,17 @@ async function run() {
         };
       }
       let result;
+
       if (number) {
-        result = await transictionHistoryCollection.find(query).toArray();
+        result = await transictionHistoryCollection
+          .find(query)
+          .sort({ date: -1 })
+          .toArray();
       } else {
-        result = await transictionHistoryCollection.find().toArray();
+        result = await transictionHistoryCollection
+          .find()
+          .sort({ date: -1 })
+          .toArray();
       }
 
       const data = result.map((el) => {
@@ -391,8 +398,8 @@ async function run() {
           amount: el.amount,
           charge: parseFloat(el.charge.toFixed(2)),
           method: el.method,
-          date: el.date || null,
-          time: el.time || null,
+          date: el.date?.toISOString().split("T")[0] || null,
+          time: el.date?.toTimeString().split(" ")[0] || null,
           status: el.status,
         };
       });
