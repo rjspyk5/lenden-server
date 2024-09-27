@@ -184,13 +184,30 @@ async function run() {
       });
 
       const afterPasswordVerification = async () => {
-        // Balance Check without charging operation
-        if (method === "deposit_money") {
+        // Balance Check if deposit or payment money without charge
+        if (
+          method === "deposit_money" ||
+          method === "payment " ||
+          method === "cash_in"
+        ) {
           if (senderDetailsFromDatabase?.amount < amount) {
+            if (method === "deposit_money") {
+              return res.send({
+                result: "Currently haven't enough money to give you",
+              });
+            }
             return res.send({ result: "Insufficent Balance" });
           }
         }
 
+        // balance check if cash in
+        if (method === "cash_in") {
+          if (receiverAccountDetailsFromDatabase?.amount < amount) {
+            return res.send({
+              result: "Currently haven't enough money to give you",
+            });
+          }
+        }
         // Balance Check if send money
         if (method === "send_money") {
           if (
@@ -246,6 +263,20 @@ async function run() {
           updateDocForSender = {
             $inc: {
               amount: -(amount + charge),
+            },
+          };
+          updateDocForReceiver = {
+            $inc: {
+              amount: amount,
+            },
+          };
+        }
+
+        if (method === "payment") {
+          transictionHistory.status = "success";
+          updateDocForSender = {
+            $inc: {
+              amount: -amount,
             },
           };
           updateDocForReceiver = {
