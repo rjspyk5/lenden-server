@@ -10,6 +10,7 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
 const { formatedTime, formatedDate } = require("./lib/formatedTime.js");
+const { sendmail } = require("./lib/sendmail");
 
 // middlewares
 app.use(express.json());
