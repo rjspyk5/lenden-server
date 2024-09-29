@@ -10,7 +10,7 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
 const { formatedTime, formatedDate } = require("./lib/formatedTime.js");
-const { sendmail } = require("./lib/sendmail");
+const { sendemail } = require("./lib/sendMail");
 
 // middlewares
 app.use(express.json());
@@ -319,6 +319,11 @@ async function run() {
             { number: ReciverNumber },
             updateDocForReceiver
           );
+          // Sending email to sender and receiver
+          // if (result,result2,result3) {
+
+          // }
+          // return response to frontend
           return res.send({ result, result2, result3 });
         }
       };
