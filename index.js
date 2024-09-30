@@ -11,7 +11,8 @@ const port = process.env.PORT || 5000;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.omgilvs.mongodb.net/?appName=Cluster0`;
 const { formatedTime, formatedDate } = require("./lib/formatedTime.js");
 const { sendemail } = require("./lib/sendMail");
-
+const { messageGenarator } = require("./lib/messageGenarator");
+console.log(console.log(messageGenarator("cash_in")));
 // middlewares
 app.use(express.json());
 app.use(
