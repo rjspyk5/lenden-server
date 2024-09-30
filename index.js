@@ -171,6 +171,20 @@ async function run() {
         number: ReciverNumber,
       });
 
+      // make object for notificationHistory it will pass after succefull transition entry
+      const senderNotification = {
+        status: "unread",
+        message: "test0",
+        number: senderDetailsFromDatabase.number,
+        trxid: "test",
+      };
+      const receiverNotification = {
+        status: "unread",
+        message: "test0",
+        number: receiverAccountDetailsFromDatabase.number,
+        trxid: "test",
+      };
+
       // password verification process
       const hashedPass = senderDetailsFromDatabase.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
@@ -188,11 +202,15 @@ async function run() {
         // Balance Check if deposit or payment money without charge
         if (
           method === "deposit_money" ||
-          method === "payment " ||
-          method === "cash_in"
+          method === "payment" ||
+          method === "cash_in" ||
+          method === "withdraw_money"
         ) {
           if (senderDetailsFromDatabase?.amount < amount) {
             if (method === "deposit_money") {
+              senderNotification.number =
+                receiverAccountDetailsFromDatabase.number;
+              receiverNotification.number = senderDetailsFromDatabase.number;
               return res.send({
                 result: "Currently haven't enough money to give you",
               });
@@ -200,9 +218,10 @@ async function run() {
             return res.send({ result: "Insufficent Balance" });
           }
         }
-
         // balance check if cash in
         if (method === "cash_in") {
+          senderNotification.number = receiverAccountDetailsFromDatabase.number;
+          receiverNotification.number = senderDetailsFromDatabase.number;
           if (receiverAccountDetailsFromDatabase?.amount < amount) {
             return res.send({
               result: "Currently haven't enough money to give you",
@@ -290,13 +309,6 @@ async function run() {
         transictionHistory.charge = charge;
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
-        // make object for notificationHistory it will pass after succefull transition entry
-        const notificationsHistory = {
-          status: "unread",
-          message: "test0",
-          to: "test",
-          trxid: "test",
-        };
 
         // make universel api for cash in ,add money,withdraw
 
