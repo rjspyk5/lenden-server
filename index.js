@@ -290,6 +290,13 @@ async function run() {
         transictionHistory.charge = charge;
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
+        // make object for notificationHistory it will pass after succefull transition entry
+        const notificationsHistory = {
+          status: "unread",
+          message: "test0",
+          to: "test",
+          trxid: "test",
+        };
 
         // make universel api for cash in ,add money,withdraw
 
@@ -301,7 +308,7 @@ async function run() {
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
-
+          console.log(result3?.insertedId.toString());
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
@@ -320,10 +327,10 @@ async function run() {
             updateDocForReceiver
           );
           // Sending email to sender and receiver
-          // if (result,result2,result3) {
-
+          // if ((result, result2, result3)) {
           // }
           // return response to frontend
+          console.log(result3?.insertedId.toString());
           return res.send({ result, result2, result3 });
         }
       };
