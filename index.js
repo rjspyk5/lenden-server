@@ -174,15 +174,11 @@ async function run() {
       // make object for notificationHistory it will pass after succefull transition entry
       const senderNotification = {
         status: "unread",
-        message: "test0",
         number: senderDetailsFromDatabase.number,
-        trxid: "test",
       };
       const receiverNotification = {
         status: "unread",
-        message: "test0",
         number: receiverAccountDetailsFromDatabase.number,
-        trxid: "test",
       };
 
       // password verification process
@@ -320,6 +316,9 @@ async function run() {
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
+          if (result3?.insertedId) {
+            console.log("test");
+          }
           console.log(result3?.insertedId.toString());
           return res.send({ result3 });
         }
