@@ -521,6 +521,13 @@ async function run() {
       });
       return res.send(data);
     });
+    app.get("/notifications/:number", async (req, res) => {
+      const number = req.params.number;
+      const result = await notificationCollection
+        .find({ number: number })
+        .toArray();
+      res.send(result);
+    });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
