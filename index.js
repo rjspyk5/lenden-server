@@ -12,7 +12,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const { formatedTime, formatedDate } = require("./lib/formatedTime.js");
 const { sendemail } = require("./lib/sendMail");
 const { messageGenarator } = require("./lib/messageGenarator");
-console.log(console.log(messageGenarator("cash_in")));
+
 // middlewares
 app.use(express.json());
 app.use(
@@ -172,16 +172,6 @@ async function run() {
         number: ReciverNumber,
       });
 
-      // make object for notificationHistory it will pass after succefull transition entry
-      const senderNotification = {
-        status: "unread",
-        number: senderDetailsFromDatabase.number,
-      };
-      const receiverNotification = {
-        status: "unread",
-        number: receiverAccountDetailsFromDatabase.number,
-      };
-
       // password verification process
       const hashedPass = senderDetailsFromDatabase.password;
       bcrypt.compare(password, hashedPass, (er, ress) => {
@@ -196,6 +186,30 @@ async function run() {
       });
 
       const afterPasswordVerification = async () => {
+        // data created for pusing on database
+        if (method === "cash_in" || method === "deposit_money") {
+          ReciverNumber = req.body.senderNumber;
+          senderNumber = req.body.number;
+        }
+
+        const transictionHistory = {
+          senderNumber,
+          ReciverNumber,
+          date,
+          amount: req.body.amount,
+          method: req.body.method,
+        };
+
+        // make object for notificationHistory it will pass after succefull transition entry
+        const senderNotification = {
+          status: "unread",
+          number: senderNumber,
+        };
+        const receiverNotification = {
+          status: "unread",
+          number: ReciverNumber,
+        };
+
         // Balance Check if deposit or payment money without charge
         if (
           method === "deposit_money" ||
@@ -240,20 +254,6 @@ async function run() {
             return res.send({ result: "Insufficent Balance" });
           }
         }
-
-        // data created for pusing on database
-        if (method === "cash_in" || method === "deposit_money") {
-          ReciverNumber = req.body.senderNumber;
-          senderNumber = req.body.number;
-        }
-
-        const transictionHistory = {
-          senderNumber,
-          ReciverNumber,
-          date,
-          amount: req.body.amount,
-          method: req.body.method,
-        };
 
         // set charge and status based on method
         let charge = 0;
@@ -304,6 +304,14 @@ async function run() {
         }
 
         transictionHistory.charge = charge;
+        const senderOldBalance =
+          method === "cash_in" || method === "deposit_money"
+            ? receiverAccountDetailsFromDatabase.amount
+            : senderDetailsFromDatabase.amount;
+        const recvrOldBalance =
+          method === "cash_in" || method === "deposit_money"
+            ? senderDetailsFromDatabase.amount
+            : receiverAccountDetailsFromDatabase.amount;
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
@@ -317,10 +325,23 @@ async function run() {
           const result3 = await transictionHistoryCollection.insertOne(
             transictionHistory
           );
+
           if (result3?.insertedId) {
-            console.log("test");
+            const msz = messageGenarator(
+              method,
+              senderNumber,
+              charge,
+              amount,
+              result3?.insertedId.toString(),
+              formatedDate(date),
+              formatedTime(date),
+              senderOldBalance,
+              recvrOldBalance,
+              ReciverNumber
+            );
+            console.log(msz);
           }
-          console.log(result3?.insertedId.toString());
+
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
@@ -339,10 +360,23 @@ async function run() {
             updateDocForReceiver
           );
           // Sending email to sender and receiver
-          // if ((result, result2, result3)) {
-          // }
+          if (result3?.insertedId) {
+            const msz = messageGenarator(
+              method,
+              senderNumber,
+              charge,
+              amount,
+              result3?.insertedId.toString(),
+              formatedDate(date),
+              formatedTime(date),
+              senderOldBalance,
+              recvrOldBalance,
+              ReciverNumber
+            );
+            console.log(msz);
+          }
           // return response to frontend
-          console.log(result3?.insertedId.toString());
+
           return res.send({ result, result2, result3 });
         }
       };
