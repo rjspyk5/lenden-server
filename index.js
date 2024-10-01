@@ -521,10 +521,11 @@ async function run() {
       });
       return res.send(data);
     });
+    // example query http://localhost:5000/notifications/01798565378
     app.get("/notifications/:number", async (req, res) => {
       const number = req.params.number;
       const result = await notificationCollection
-        .find({ number: number })
+        .find({ number: number }, { projection: { message: 1, status: 1 } })
         .toArray();
       res.send(result);
     });
