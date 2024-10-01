@@ -46,6 +46,9 @@ async function run() {
     const transictionHistoryCollection = client
       .db("lenden")
       .collection("transictionHistoryCollection");
+    const notificationCollection = client
+      .db("lenden")
+      .collection("notificationCollection");
 
     const cookieOptions = {
       httpOnly: true,
@@ -304,6 +307,7 @@ async function run() {
         }
 
         transictionHistory.charge = charge;
+        // confusing sender and reciver related variable confiustion clearing
         const senderOldBalance =
           method === "cash_in" || method === "deposit_money"
             ? receiverAccountDetailsFromDatabase.amount
@@ -312,6 +316,14 @@ async function run() {
           method === "cash_in" || method === "deposit_money"
             ? senderDetailsFromDatabase.amount
             : receiverAccountDetailsFromDatabase.amount;
+        const senderEmail =
+          method === "cash_in" || method === "deposit_money"
+            ? receiverAccountDetailsFromDatabase.email
+            : senderDetailsFromDatabase.email;
+        const recvrEmail =
+          method === "cash_in" || method === "deposit_money"
+            ? senderDetailsFromDatabase.email
+            : receiverAccountDetailsFromDatabase.email;
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
 
@@ -326,21 +338,28 @@ async function run() {
             transictionHistory
           );
 
-          if (result3?.insertedId) {
-            const msz = messageGenarator(
-              method,
-              senderNumber,
-              charge,
-              amount,
-              result3?.insertedId.toString(),
-              formatedDate(date),
-              formatedTime(date),
-              senderOldBalance,
-              recvrOldBalance,
-              ReciverNumber
-            );
-            console.log(msz);
-          }
+          const msz = messageGenarator(
+            method,
+            senderNumber,
+            charge,
+            amount,
+            result3?.insertedId.toString(),
+            formatedDate(date),
+            formatedTime(date),
+            senderOldBalance,
+            recvrOldBalance,
+            ReciverNumber
+          );
+          senderNotification.message = msz.senderMessage;
+          senderNotification.trxid = result3?.insertedId;
+          receiverNotification.trxid = result3?.insertedId;
+          receiverNotification.message = msz.receiverMessage;
+          sendemail(senderEmail, "Transition Update", msz.senderMessage);
+          sendemail(recvrEmail, "Transition Update", msz.receiverMessage);
+          const notificationResult = await notificationCollection.insertMany([
+            senderNotification,
+            receiverNotification,
+          ]);
 
           return res.send({ result3 });
         }
@@ -360,22 +379,29 @@ async function run() {
             updateDocForReceiver
           );
           // Sending email to sender and receiver
-          if (result3?.insertedId) {
-            const msz = messageGenarator(
-              method,
-              senderNumber,
-              charge,
-              amount,
-              result3?.insertedId.toString(),
-              formatedDate(date),
-              formatedTime(date),
-              senderOldBalance,
-              recvrOldBalance,
-              ReciverNumber
-            );
-            console.log(msz);
-          }
-          // return response to frontend
+
+          const msz = messageGenarator(
+            method,
+            senderNumber,
+            charge,
+            amount,
+            result3?.insertedId.toString(),
+            formatedDate(date),
+            formatedTime(date),
+            senderOldBalance,
+            recvrOldBalance,
+            ReciverNumber
+          );
+          senderNotification.message = msz.senderMessage;
+          senderNotification.trxid = result3?.insertedId;
+          receiverNotification.trxid = result3?.insertedId;
+          receiverNotification.message = msz.receiverMessage;
+          sendemail(senderEmail, "Transition Update", msz.senderMessage);
+          sendemail(recvrEmail, "Transition Update", msz.receiverMessage);
+          const notificationResult = notificationCollection.insertMany([
+            senderNotification,
+            receiverNotification,
+          ]);
 
           return res.send({ result, result2, result3 });
         }
