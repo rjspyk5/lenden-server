@@ -207,10 +207,12 @@ async function run() {
         const senderNotification = {
           status: "unread",
           number: senderNumber,
+          date: date,
         };
         const receiverNotification = {
           status: "unread",
           number: ReciverNumber,
+          date: date,
         };
 
         // Balance Check if deposit or payment money without charge
@@ -526,6 +528,7 @@ async function run() {
       const number = req.params.number;
       const result = await notificationCollection
         .find({ number: number }, { projection: { message: 1, status: 1 } })
+        .sort({ date: -1 })
         .toArray();
       res.send(result);
     });
