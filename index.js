@@ -540,15 +540,8 @@ async function run() {
             updateDocSender.$inc.expense = amount * expensePercentage - amount;
             updateDocSender.$inc.amount = -(amount * expensePercentage);
           }
-          const adminIncomeUpdate = await userCollection.updateOne(
-            { role: "admin" },
-            {
-              $inc: {
-                income: amount * expensePercentage - amount,
-                amount: amount * expensePercentage,
-              },
-            }
-          );
+          updateDocRcvr.$inc.income = amount * expensePercentage - amount;
+          updateDocRcvr.$inc.amount = amount * expensePercentage;
         }
 
         const result = await transictionHistoryCollection.updateOne(
