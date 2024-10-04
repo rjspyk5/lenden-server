@@ -537,14 +537,14 @@ async function run() {
             //   { number: senderDetailsFromDatabase.number },
             //   { $inc: { expense: -(amount * expensePercentage) } }
             // );
-            updateDocSender.$inc.expense = amount - amount * expensePercentage;
+            updateDocSender.$inc.expense = amount * expensePercentage - amount;
             updateDocSender.$inc.amount = -(amount * expensePercentage);
           }
           const adminIncomeUpdate = await userCollection.updateOne(
             { role: "admin" },
             {
               $inc: {
-                income: amount - amount * expensePercentage,
+                income: amount * expensePercentage - amount,
                 amount: amount * expensePercentage,
               },
             }
