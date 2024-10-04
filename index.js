@@ -79,7 +79,35 @@ async function run() {
           insertedId: null,
         });
       }
+      data.amount = 50;
+
+      if (data.role === "agent") {
+        data.income = 0;
+        data.expense = 0;
+        data.amount = 1000;
+      }
+      const updateDoc = {
+        $inc: {
+          expense: data.amount,
+          amount: -data.amount,
+        },
+      };
+      const adminExpenseUpdate = await userCollection.updateOne(
+        {
+          role: "admin",
+        },
+        updateDoc
+      );
+      if (data?.email) {
+        sendemail(
+          data?.email,
+          "Account Created",
+          `You Have been successfully created ${data.role} account.You have got reg bonus ${data.amount} tk`
+        );
+      }
+
       const result = await userCollection.insertOne(data);
+
       res.send(result);
     });
     app.post("/login", async (req, res) => {
@@ -531,6 +559,14 @@ async function run() {
         .sort({ date: -1 })
         .toArray();
       res.send(result);
+    });
+
+    app.get("/agentdashboard/:number", async (req, res) => {
+      const userNumber = req.params.number;
+      const userDetails = await userCollection.findOne({ number: userNumber });
+      const availableBalance = userDetails?.amount;
+
+      res.send(userDetails);
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
