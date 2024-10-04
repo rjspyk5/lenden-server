@@ -436,7 +436,7 @@ async function run() {
           const income = method === "send_money" ? charge : charge / 2;
           const adminIncomeUpdate = await userCollection.updateOne(
             { role: "admin" },
-            { $inc: { income: income } }
+            { $inc: { income: income, amount: income } }
           );
           // Sending email to sender and receiver
 
