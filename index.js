@@ -262,6 +262,18 @@ async function run() {
             return res.send({ result: "Insufficent Balance" });
           }
         }
+        // balance check if withdraw
+        if (method === "withdraw_money") {
+          if (senderDetailsFromDatabase.role === "agent") {
+            if (senderDetailsFromDatabase?.amount < amount * 1.001) {
+              return res.send({ result: "Insufficent Balance" });
+            }
+          } else {
+            if (senderDetailsFromDatabase?.amount < amount * 1.005) {
+              return res.send({ result: "Insufficent Balance" });
+            }
+          }
+        }
         // balance check if cash in
         if (method === "cash_in") {
           senderNotification.number = receiverAccountDetailsFromDatabase.number;
@@ -525,13 +537,14 @@ async function run() {
             //   { number: senderDetailsFromDatabase.number },
             //   { $inc: { expense: -(amount * expensePercentage) } }
             // );
-            updateDocSender.$inc.expense = -(amount * expensePercentage);
+            updateDocSender.$inc.expense = amount - amount * expensePercentage;
+            updateDocSender.$inc.amount = -(amount * expensePercentage);
           }
           const adminIncomeUpdate = await userCollection.updateOne(
             { role: "admin" },
             {
               $inc: {
-                income: amount * expensePercentage,
+                income: amount - amount * expensePercentage,
                 amount: amount * expensePercentage,
               },
             }
