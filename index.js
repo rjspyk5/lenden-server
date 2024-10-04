@@ -82,7 +82,7 @@ async function run() {
       data.amount = 50;
 
       if (data.role === "agent") {
-        data.income = 0;
+        data.income = 1000;
         data.expense = 0;
         data.amount = 1000;
       }
@@ -303,7 +303,8 @@ async function run() {
           };
           updateDocForReceiver = {
             $inc: {
-              amount: amount,
+              amount: amount + charge / 2,
+              income: charge / 2,
             },
           };
         }
@@ -356,6 +357,8 @@ async function run() {
             : receiverAccountDetailsFromDatabase.email;
 
         //todo: Here need to decided that admin will get money or not if admin get money then i will add it in admin balance and agent will get also some money
+        transictionHistory.adminIncome = charge === 0 ? 0 : charge / 2;
+        transictionHistory.agentIncome = charge === 0 ? 0 : charge / 2;
 
         // make universel api for cash in ,add money,withdraw
 
@@ -390,7 +393,28 @@ async function run() {
             senderNotification,
             receiverNotification,
           ]);
-
+          // Admin Profit and Agent and Marchent expense logic
+          if (method === "withdraw_money") {
+            // 0.01% expense
+            expensePercentage = 1.005;
+            if (senderDetailsFromDatabase.role === "agent") {
+              // 0.5% expense if sender
+              let expensePercentage = 1.001;
+              const senderExpenseUpdate = await userCollection.updateOne(
+                { number: senderDetailsFromDatabase.number },
+                { $inc: { expense: -(amount * expensePercentage) } }
+              );
+            }
+            const adminIncomeUpdate = await userCollection.updateOne(
+              { role: "admin" },
+              {
+                $inc: {
+                  income: amount * expensePercentage,
+                  amount: amount * expensePercentage,
+                },
+              }
+            );
+          }
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
@@ -407,6 +431,12 @@ async function run() {
           const result2 = await userCollection.updateOne(
             { number: ReciverNumber },
             updateDocForReceiver
+          );
+          // admin Profit Logic
+          const income = method === "send_money" ? charge : charge / 2;
+          const adminIncomeUpdate = await userCollection.updateOne(
+            { role: "admin" },
+            { $inc: { income: income } }
           );
           // Sending email to sender and receiver
 
