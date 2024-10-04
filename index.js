@@ -227,7 +227,7 @@ async function run() {
           senderNumber,
           ReciverNumber,
           date,
-          amount: req.body.amount,
+          amount: parseInt(req.body.amount),
           method: req.body.method,
         };
 
@@ -620,6 +620,60 @@ async function run() {
       const availableBalance = userDetails?.amount;
 
       res.send(userDetails);
+    });
+    app.get("/admindashboard", async (req, res) => {
+      // const userDetails = await userCollection.findOne({ role: "admin" });
+      const withdraw = await transictionHistoryCollection
+        .aggregate([
+          {
+            $match: {
+              method: "withdraw_money", // Match documents where method is "deposit"
+              ReciverNumber: "01684883865", // And recivernumber is "01684883865"
+            },
+          },
+          {
+            $group: {
+              _id: null, // No specific grouping key needed
+              totalAmount: { $sum: "$amount" }, // Sum the 'amount' field
+            },
+          },
+        ])
+        .toArray();
+      const deposit = await transictionHistoryCollection
+        .aggregate([
+          {
+            $match: {
+              method: "deposit_money", // Match documents where method is "deposit"
+              senderNumber: "01684883865", // And recivernumber is "01684883865"
+            },
+          },
+          {
+            $group: {
+              _id: null, // No specific grouping key needed
+              totalAmount: { $sum: "$amount" }, // Sum the 'amount' field
+            },
+          },
+        ])
+        .toArray();
+      const topBalances = await userCollection
+        .find({}, { amount: 1, _id: 0 }) // Select only the 'amount' field
+        .sort({ amount: -1 }) // Sort by 'amount' in descending order
+        .limit(3)
+        .toArray(); // Limit the result to the top 3
+
+      const userDetails = await userCollection.findOne({ role: "admin" });
+      const totalWithdraw = result[0]?.totalAmount;
+      const totalDeposit = result[0]?.totalAmount;
+      const income = userDetails?.income;
+      const expense = userDetails?.expense;
+      const profit = income - expense;
+      const allUser = await userCollection.countDocuments();
+      const pending = await userCollection.countDocuments({
+        accountStatus: "pending",
+      });
+      const approved = userCollection.countDocuments({
+        accountStatus: "approved",
+      });
     });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
