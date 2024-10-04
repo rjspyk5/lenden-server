@@ -362,6 +362,7 @@ async function run() {
 
         // make universel api for cash in ,add money,withdraw
 
+        // if have to accept type req
         if (
           method === "cash_in" ||
           method === "deposit_money" ||
@@ -393,28 +394,7 @@ async function run() {
             senderNotification,
             receiverNotification,
           ]);
-          // Admin Profit and Agent and Marchent expense logic
-          if (method === "withdraw_money") {
-            // 0.01% expense
-            expensePercentage = 1.005;
-            if (senderDetailsFromDatabase.role === "agent") {
-              // 0.5% expense if sender
-              let expensePercentage = 1.001;
-              const senderExpenseUpdate = await userCollection.updateOne(
-                { number: senderDetailsFromDatabase.number },
-                { $inc: { expense: -(amount * expensePercentage) } }
-              );
-            }
-            const adminIncomeUpdate = await userCollection.updateOne(
-              { role: "admin" },
-              {
-                $inc: {
-                  income: amount * expensePercentage,
-                  amount: amount * expensePercentage,
-                },
-              }
-            );
-          }
+
           return res.send({ result3 });
         }
         // if send Money or cashout then it will run
@@ -496,18 +476,8 @@ async function run() {
       const senderNumber = req.query.sender;
       const recver = req.query.rcver;
       const amount = parseInt(req.query.amount);
-      const senderQuery = { number: senderNumber };
-      const updateDocSender = {
-        $inc: {
-          amount: -amount,
-        },
-      };
-      const rcvrQuery = { number: recver };
-      const updateDocRcvr = {
-        $inc: {
-          amount: amount,
-        },
-      };
+      const method = req.query?.method;
+
       const query = { _id: new ObjectId(id) };
       const updateDocForHistory = {
         $set: {
@@ -516,12 +486,58 @@ async function run() {
       };
 
       if (statusType === "cancel") {
+        // if cancel then it will stop here
         const result = await transictionHistoryCollection.updateOne(
           query,
           updateDocForHistory
         );
         res.send({ result });
       } else {
+        // if approve then work here
+
+        const senderQuery = { number: senderNumber };
+        const rcvrQuery = { number: recver };
+        const senderDetailsFromDatabase = await userCollection.findOne(
+          senderQuery
+        );
+
+        const updateDocSender = {
+          $inc: {
+            amount: -amount,
+          },
+        };
+
+        const updateDocRcvr = {
+          $inc: {
+            amount: amount,
+          },
+        };
+
+        //if withdraw then Admin Profit and Agent and Marchent expense logic
+
+        if (method) {
+          // 0.5% expense if marchent
+          let expensePercentage = 1.005;
+          if (senderDetailsFromDatabase.role === "agent") {
+            // 0.01% expense if agent
+            expensePercentage = 1.001;
+            // const senderExpenseUpdate = await userCollection.updateOne(
+            //   { number: senderDetailsFromDatabase.number },
+            //   { $inc: { expense: -(amount * expensePercentage) } }
+            // );
+            updateDocSender.$inc.expense = -(amount * expensePercentage);
+          }
+          const adminIncomeUpdate = await userCollection.updateOne(
+            { role: "admin" },
+            {
+              $inc: {
+                income: amount * expensePercentage,
+                amount: amount * expensePercentage,
+              },
+            }
+          );
+        }
+
         const result = await transictionHistoryCollection.updateOne(
           query,
           updateDocForHistory
@@ -534,6 +550,7 @@ async function run() {
           senderQuery,
           updateDocSender
         );
+
         res.send({ result, result2, result3 });
       }
     });
