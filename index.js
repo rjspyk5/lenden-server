@@ -186,6 +186,20 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req?.body?.status;
+
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          accountStatus: status,
+        },
+      };
+      const result = await userCollection.updateOne(query, updateDoc);
+
+      res.send(result);
+    });
     app.post("/transactions", async (req, res) => {
       const password = req.body.pin;
       let ReciverNumber = req.body.number;
@@ -498,8 +512,8 @@ async function run() {
         },
       };
 
-      if (statusType === "cancel") {
-        // if cancel then it will stop here
+      if (statusType === "reject") {
+        // if reject then it will stop here
         const result = await transictionHistoryCollection.updateOne(
           query,
           updateDocForHistory
