@@ -624,8 +624,19 @@ async function run() {
       const number = req.params.number;
       const result = await notificationCollection
         .find({ number: number }, { projection: { message: 1, status: 1 } })
-        .sort({ date: -1 })
+        .sort({ status: -1, date: -1 })
         .toArray();
+      res.send(result);
+    });
+    app.patch("/notification/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "read",
+        },
+      };
+      const result = await notificationCollection.updateOne(query, updateDoc);
       res.send(result);
     });
 
