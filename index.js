@@ -616,10 +616,50 @@ async function run() {
 
     app.get("/agentdashboard/:number", async (req, res) => {
       const userNumber = req.params.number;
-      const userDetails = await userCollection.findOne({ number: userNumber });
-      const availableBalance = userDetails?.amount;
+      const agentIncomeExpense = await userCollection.findOne(
+        { number: userNumber },
+        { projection: { amount: 1, income: 1, expense: 1 } }
+      );
 
-      res.send(userDetails);
+      const result = await transictionHistoryCollection
+        .aggregate([
+          {
+            $match: {
+              $or: [
+                { senderNumber: userNumber },
+                { ReciverNumber: userNumber },
+              ],
+            },
+          },
+          {
+            $project: {
+              date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, // Format the date
+              amount: {
+                $cond: {
+                  if: { $isNumber: "$amount" },
+                  then: "$amount",
+                  else: { $toDouble: "$amount" }, // Convert to number if it's a string
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$date", // Group by formatted date
+              totalAmount: { $sum: "$amount" }, // Sum the amounts (ensured as numbers)
+            },
+          },
+          {
+            $sort: { _id: 1 }, // Sort by date in ascending order
+          },
+        ])
+        .toArray();
+
+      const prices = result.map((item) => item.totalAmount);
+      const dates = result.map((item) => item._id);
+      const agentGraphData = { prices, dates };
+
+      res.send({ agentIncomeExpense, agentGraphData });
     });
     app.get("/admindashboard", async (req, res) => {
       try {
