@@ -274,7 +274,7 @@ async function run() {
                 result: "Currently haven't enough money to give you",
               });
             }
-            return res.send({ result: "Insufficent Balance" });
+            return res.send(false);
           }
         }
         // balance check if withdraw
@@ -493,6 +493,7 @@ async function run() {
         ],
       };
       const result = await transictionHistoryCollection.find(query).toArray();
+
       res.send(result);
     });
     // api for update cashin req and cash out req . Here have to send id as params and "pending"/"cancel" status query
