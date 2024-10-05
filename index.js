@@ -137,7 +137,8 @@ async function run() {
                 name: isAnyAccountHave.name,
                 email: isAnyAccountHave?.email,
                 photo: isAnyAccountHave.photo,
-                accountStats: isAnyAccountHave.status,
+
+                accountStatus: isAnyAccountHave.accountStatus,
                 role: isAnyAccountHave?.role,
                 balance: isAnyAccountHave?.amount,
                 number: isAnyAccountHave?.number,
