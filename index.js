@@ -622,59 +622,113 @@ async function run() {
       res.send(userDetails);
     });
     app.get("/admindashboard", async (req, res) => {
-      // const userDetails = await userCollection.findOne({ role: "admin" });
-      const withdraw = await transictionHistoryCollection
-        .aggregate([
-          {
-            $match: {
-              method: "withdraw_money", // Match documents where method is "deposit"
-              ReciverNumber: "01684883865", // And recivernumber is "01684883865"
+      try {
+        // Get total withdrawal for a specific admin number
+        const withdraw = await transictionHistoryCollection
+          .aggregate([
+            {
+              $match: {
+                method: "withdraw_money",
+                ReciverNumber: "01684883865",
+              },
             },
-          },
-          {
-            $group: {
-              _id: null, // No specific grouping key needed
-              totalAmount: { $sum: "$amount" }, // Sum the 'amount' field
+            {
+              $group: {
+                _id: null,
+                totalAmount: { $sum: "$amount" },
+              },
             },
-          },
-        ])
-        .toArray();
-      const deposit = await transictionHistoryCollection
-        .aggregate([
-          {
-            $match: {
-              method: "deposit_money", // Match documents where method is "deposit"
-              senderNumber: "01684883865", // And recivernumber is "01684883865"
-            },
-          },
-          {
-            $group: {
-              _id: null, // No specific grouping key needed
-              totalAmount: { $sum: "$amount" }, // Sum the 'amount' field
-            },
-          },
-        ])
-        .toArray();
-      const topBalances = await userCollection
-        .find({}, { amount: 1, _id: 0 }) // Select only the 'amount' field
-        .sort({ amount: -1 }) // Sort by 'amount' in descending order
-        .limit(3)
-        .toArray(); // Limit the result to the top 3
+          ])
+          .toArray();
 
-      const userDetails = await userCollection.findOne({ role: "admin" });
-      const totalWithdraw = result[0]?.totalAmount;
-      const totalDeposit = result[0]?.totalAmount;
-      const income = userDetails?.income;
-      const expense = userDetails?.expense;
-      const profit = income - expense;
-      const allUser = await userCollection.countDocuments();
-      const pending = await userCollection.countDocuments({
-        accountStatus: "pending",
-      });
-      const approved = userCollection.countDocuments({
-        accountStatus: "approved",
-      });
+        // Get total deposit for a specific admin number
+        const deposit = await transictionHistoryCollection
+          .aggregate([
+            {
+              $match: {
+                method: "deposit_money",
+                senderNumber: "01684883865",
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalAmount: { $sum: "$amount" },
+              },
+            },
+          ])
+          .toArray();
+
+        // Get the top 3 user balances
+        const topBalances = await userCollection
+          .find({}, { projection: { amount: 1, name: 1, number: 1 } })
+          .sort({ amount: -1 })
+          .limit(3)
+          .toArray();
+
+        // Get daily transaction totals
+        const result = await transictionHistoryCollection
+          .aggregate([
+            {
+              $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                totalAmount: { $sum: "$amount" },
+              },
+            },
+            {
+              $sort: { _id: 1 },
+            },
+          ])
+          .toArray();
+
+        // Get last 3 transactions
+        const transactions = await transictionHistoryCollection
+          .find({})
+          .sort({ date: -1 })
+          .limit(3)
+          .toArray();
+        // Extract prices and dates for transition graph
+        const prices = result.map((item) => item.totalAmount);
+        const dates = result.map((item) => item._id);
+        const transitionGraph = { prices, dates };
+
+        // Admin user details
+        const userDetails = await userCollection.findOne({ role: "admin" });
+        const totalWithdraw = withdraw[0]?.totalAmount || 0;
+        const totalDeposit = deposit[0]?.totalAmount || 0;
+        const income = userDetails?.income || 0;
+        const expense = userDetails?.expense || 0;
+        const profit = income - expense;
+
+        // User stats
+        const allUser = await userCollection.countDocuments();
+        const pending = await userCollection.countDocuments({
+          accountStatus: "pending",
+        });
+        const approved = await userCollection.countDocuments({
+          accountStatus: "approved",
+        });
+
+        // Send all the data to the frontend
+        res.send({
+          totalWithdraw,
+          totalDeposit,
+          topBalances,
+          transitionGraph,
+          transactions,
+          totalUsers: allUser,
+          pendingUsers: pending,
+          approvedUsers: approved,
+          income,
+          expense,
+          profit,
+        });
+      } catch (error) {
+        console.error("Error in /admindashboard:", error);
+        res.status(500).send({ error: "Failed to load dashboard data" });
+      }
     });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
