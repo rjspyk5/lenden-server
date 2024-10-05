@@ -43,6 +43,7 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     // collection names
     const userCollection = client.db("lenden").collection("userCollection");
+    const loanCollection = client.db("lenden").collection("loanCollection");
     const transictionHistoryCollection = client
       .db("lenden")
       .collection("transictionHistoryCollection");
@@ -795,7 +796,12 @@ async function run() {
         res.status(500).send({ error: "Failed to load dashboard data" });
       }
     });
-
+    app.post("/loanreq", async (req, res) => {
+      const data = req.body;
+      data.status = "pending";
+      const result = await loanCollection.insertOne(data);
+      res.send(result);
+    });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
