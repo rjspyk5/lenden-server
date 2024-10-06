@@ -260,22 +260,9 @@ async function run() {
         };
 
         // Balance Check if deposit or payment money without charge
-        if (
-          method === "deposit_money" ||
-          method === "payment" ||
-          method === "cash_in" ||
-          method === "withdraw_money"
-        ) {
+        if (method === "payment" || method === "withdraw_money") {
           if (senderDetailsFromDatabase?.amount < amount) {
-            if (method === "deposit_money") {
-              senderNotification.number =
-                receiverAccountDetailsFromDatabase.number;
-              receiverNotification.number = senderDetailsFromDatabase.number;
-              return res.send({
-                result: "Currently haven't enough money to give you",
-              });
-            }
-            return res.send(false);
+            return res.send({ result: "Insufficent Balance" });
           }
         }
         // balance check if withdraw
@@ -291,7 +278,7 @@ async function run() {
           }
         }
         // balance check if cash in
-        if (method === "cash_in") {
+        if (method === "deposit_money" || method === "cash_in") {
           senderNotification.number = receiverAccountDetailsFromDatabase.number;
           receiverNotification.number = senderDetailsFromDatabase.number;
           if (receiverAccountDetailsFromDatabase?.amount < amount) {
